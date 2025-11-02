@@ -52,6 +52,12 @@ const ExamViolationsDashboard = () => {
         const violationScore = calculateViolationScore(violations);
         const behaviorScore = 100 - (totalViolations * 2); // Simple behavior score calculation
         
+        // Get pass percentage from test settings (default to 70 if not specified)
+        const settings = attempt.settings || {};
+        const passPercentage = settings.pass_percentage || 70;
+        const testScore = attempt.score || 0;
+        const passed = testScore >= passPercentage;
+        
         return {
           attempt_id: attempt.attempt_id,
           user_name: attempt.user_name || 'Unknown User',
@@ -60,7 +66,9 @@ const ExamViolationsDashboard = () => {
           status: attempt.status,
           behavior_score: Math.max(0, behaviorScore),
           final_score: attempt.score,
-          test_score: attempt.score,
+          test_score: testScore,
+          pass_percentage: passPercentage,
+          passed: passed,
           violation_count: totalViolations,
           start_time: attempt.started_at || attempt.created_at,
           end_time: attempt.finished_at || attempt.completed_at,
@@ -69,7 +77,8 @@ const ExamViolationsDashboard = () => {
           violationScore: violationScore,
           category: categorizeCandidate(totalViolations, behaviorScore),
           duration: calculateDuration(attempt.started_at || attempt.created_at, attempt.finished_at || attempt.completed_at),
-          proctoring_events: attempt.proctoring_events || []
+          proctoring_events: attempt.proctoring_events || [],
+          settings: settings
         };
       });
       
@@ -242,13 +251,13 @@ const ExamViolationsDashboard = () => {
 
   const exportReport = () => {
     const csv = [
-      ['Candidate', 'Exam', 'Duration', 'Violations', 'Score', 'Category', 'Date'].join(','),
+      ['Candidate', 'Exam', 'Duration', 'Violations', 'Test Score (%)', 'Category', 'Date'].join(','),
       ...filteredCandidates.map(c => [
         c.user_name,
         c.certification_title,
         c.duration,
         c.totalViolations,
-        c.violationScore,
+        c.test_score !== undefined ? `${c.test_score}%` : 'N/A',
         c.category.label,
         new Date(c.start_time).toLocaleDateString()
       ].join(','))
@@ -403,7 +412,9 @@ const ExamViolationsDashboard = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase">Exam</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase">Duration</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase">Violations</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase">Score</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase" title="Exam Performance Score (% correct)">
+                  Test Score
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase">Category</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase">Action</th>
               </tr>
@@ -434,13 +445,18 @@ const ExamViolationsDashboard = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`font-semibold ${
-                        candidate.violationScore < 5 ? 'text-green-400' :
-                        candidate.violationScore < 10 ? 'text-yellow-400' :
-                        'text-red-400'
-                      }`}>
-                        {candidate.violationScore}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`font-semibold ${
+                          candidate.passed ? 'text-green-400' :
+                          (candidate.test_score || 0) >= (candidate.pass_percentage * 0.8) ? 'text-yellow-400' :
+                          'text-red-400'
+                        }`} title={`Exam Performance Score (Pass: ${candidate.pass_percentage}%)`}>
+                          {candidate.test_score !== undefined ? `${candidate.test_score}%` : 'N/A'}
+                        </span>
+                        <span className="text-xs text-slate-400" title={`Required: ${candidate.pass_percentage}% • ${candidate.passed ? 'PASSED ✓' : 'FAILED ✗'}`}>
+                          📝
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <CategoryBadge category={candidate.category} />
@@ -551,7 +567,21 @@ const CandidateDetailsModal = ({ candidate, onClose, activeTab, setActiveTab, ad
               <span>•</span>
               <span>{candidate.duration}</span>
               <span>•</span>
-              <span>Score: {candidate.violationScore}</span>
+              <span className="flex items-center gap-1">
+                <span className="text-slate-500">Test Score:</span>
+                <span className={`font-semibold ${
+                  candidate.passed ? 'text-green-400' :
+                  (candidate.test_score || 0) >= (candidate.pass_percentage * 0.8) ? 'text-yellow-400' :
+                  'text-red-400'
+                }`} title={`Pass Threshold: ${candidate.pass_percentage}%`}>
+                  {candidate.test_score !== undefined ? `${candidate.test_score}%` : 'N/A'}
+                </span>
+                <span className={`text-xs px-2 py-0.5 rounded ${
+                  candidate.passed ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                }`}>
+                  {candidate.passed ? 'PASSED' : 'FAILED'}
+                </span>
+              </span>
             </div>
           </div>
           <button
@@ -652,14 +682,31 @@ const TestDetailsView = ({ candidate }) => {
           <FileText className="w-5 h-5 text-blue-400" />
           Test Overview
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-slate-700/50 rounded-lg p-4">
             <div className="text-slate-400 text-sm mb-1">Test Status</div>
-            <div className="text-white font-bold text-xl">{candidate.status || 'Completed'}</div>
+            <div className={`font-bold text-xl ${
+              candidate.passed ? 'text-green-400' : 'text-red-400'
+            }`}>
+              {candidate.passed ? '✓ PASSED' : '✗ FAILED'}
+            </div>
           </div>
           <div className="bg-slate-700/50 rounded-lg p-4">
-            <div className="text-slate-400 text-sm mb-1">Final Score</div>
-            <div className="text-white font-bold text-xl">{score}%</div>
+            <div className="text-slate-400 text-sm mb-1 flex items-center gap-1">
+              Test Score
+              <span className="text-xs" title="Exam performance - % of questions answered correctly">📝</span>
+            </div>
+            <div className={`font-bold text-xl ${
+              candidate.passed ? 'text-green-400' :
+              score >= (candidate.pass_percentage * 0.8) ? 'text-yellow-400' :
+              'text-red-400'
+            }`}>
+              {score}%
+            </div>
+          </div>
+          <div className="bg-slate-700/50 rounded-lg p-4">
+            <div className="text-slate-400 text-sm mb-1">Pass Threshold</div>
+            <div className="text-blue-400 font-bold text-xl">{candidate.pass_percentage}%</div>
           </div>
           <div className="bg-slate-700/50 rounded-lg p-4">
             <div className="text-slate-400 text-sm mb-1">Duration</div>
@@ -824,6 +871,29 @@ const TestDetailsView = ({ candidate }) => {
             </div>
             <div className="text-white font-bold text-xl">
               {candidate.totalViolations || 0}
+            </div>
+          </div>
+        </div>
+        
+        {/* Violation Severity Score */}
+        <div className="bg-gradient-to-r from-orange-900/20 to-red-900/20 border border-orange-700/50 rounded-lg p-4 mt-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-orange-300 text-sm mb-1 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                Violation Severity Score
+                <span className="text-xs text-slate-400" title="Weighted penalty based on violation types and frequency">ℹ️</span>
+              </div>
+              <div className="text-slate-400 text-xs">
+                Weighted penalty score (higher = more serious violations)
+              </div>
+            </div>
+            <div className={`font-bold text-3xl ${
+              candidate.violationScore < 5 ? 'text-green-400' :
+              candidate.violationScore < 10 ? 'text-yellow-400' :
+              'text-red-400'
+            }`}>
+              {candidate.violationScore}
             </div>
           </div>
         </div>

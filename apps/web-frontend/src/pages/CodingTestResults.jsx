@@ -27,6 +27,8 @@ export const CodingTestResults = () => {
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState('');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [reviewRequested, setReviewRequested] = useState(false);
+  const [requestingReview, setRequestingReview] = useState(false);
 
   useEffect(() => {
     fetchResults();
@@ -87,6 +89,39 @@ export const CodingTestResults = () => {
     }
   };
 
+  const requestReview = async () => {
+    setRequestingReview(true);
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_BASE_URL}/api/cert-tests/attempts/${attemptId}/request-review`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          reason: `Score ${score}% is within review threshold (pass: ${passPercentage}%)`,
+          student_comment: 'Requesting manual review for score adjustment consideration'
+        })
+      });
+      
+      if (response.ok) {
+        setReviewRequested(true);
+        toast.success('Review request submitted successfully! An admin will review your test.');
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.detail || 'Failed to request review. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error requesting review:', error);
+      toast.error('Failed to request review. Please try again.');
+    } finally {
+      setRequestingReview(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -142,8 +177,13 @@ export const CodingTestResults = () => {
   }
 
   const score = results.score || 0;
-  const passed = score >= 85;
-  const eligibleForReview = score >= 80;
+  const passPercentage = results.settings?.pass_percentage || 70;
+  const passed = score >= passPercentage;
+  
+  // Check if eligible for review (within 10% of pass threshold)
+  const reviewThreshold = passPercentage * 0.9; // 90% of pass threshold
+  const isEligibleForReview = !passed && score >= reviewThreshold && score < passPercentage;
+  const pointsNeeded = passPercentage - score;
   
   // Use backend-calculated values if available
   const resultData = results.result || {};
@@ -258,10 +298,38 @@ export const CodingTestResults = () => {
               <p className="text-lg text-slate-300">
                 {passed ? 'Congratulations! You passed the test!' : 'Keep practicing to improve your score!'}
               </p>
-              {eligibleForReview && (
-                <Badge className="mt-4 bg-green-500/20 text-green-400 border-green-500/30 px-4 py-2">
-                  ✓ Eligible for Code Review
-                </Badge>
+              
+              {/* Review Eligibility Notice */}
+              {isEligibleForReview && (
+                <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg max-w-2xl mx-auto">
+                  <div className="flex items-start gap-3">
+                    <Activity className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-semibold text-blue-300 mb-1">
+                        Eligible for Manual Review
+                      </p>
+                      <p className="text-xs text-blue-200 mb-3">
+                        You scored {score}%, just {pointsNeeded.toFixed(1)}% below the pass threshold. 
+                        Your test can be reviewed by an administrator for potential score adjustment.
+                      </p>
+                      {!reviewRequested && !results.review_requested && (
+                        <Button
+                          onClick={requestReview}
+                          disabled={requestingReview}
+                          size="sm"
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          {requestingReview ? 'Requesting...' : 'Request Manual Review'}
+                        </Button>
+                      )}
+                      {(reviewRequested || results.review_requested) && (
+                        <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                          ✓ Review Requested - Admin will review your test
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </CardContent>

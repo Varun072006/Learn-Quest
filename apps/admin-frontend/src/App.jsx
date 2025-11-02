@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import Users from './pages/Users'
@@ -17,6 +18,7 @@ import CertificationTestManager from './pages/CertificationTestManager'
 import TestsDashboard from './pages/TestsDashboard'
 import QuestionBanks from './pages/QuestionBanks'
 import ExamViolationsDashboard from './pages/ExamViolationsDashboard'
+import TestReview from './pages/TestReview'
 import UserProgress from './pages/UserProgress'
 import UserComparison from './pages/UserComparison'
 
@@ -38,9 +40,11 @@ function App() {
   }, [])
 
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
+    <>
+      <Toaster position="top-right" richColors />
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
         <Route path="/users" element={<Users />} />
         <Route path="/users/:userId/progress" element={<UserProgress />} />
         <Route path="/users/compare" element={<UserComparison />} />
@@ -56,11 +60,13 @@ function App() {
         <Route path="/question-banks" element={<QuestionBanks />} />
         <Route path="/proctoring-review" element={<ProctoringReview />} />
         <Route path="/exam-violations" element={<ExamViolationsDashboard />} />
+        <Route path="/test-review" element={<TestReview />} />
         <Route path="/results-analytics" element={<ResultsAnalytics />} />
         <Route path="/certificate-management" element={<CertificateManagement />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
+    </>
   )
 }
 

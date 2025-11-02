@@ -85,6 +85,12 @@ export const adminCertTestsAPI = {
   // Test Attempts (Results)
   getAllAttempts: () => api.get('/api/cert-tests/attempts'),
   getAttempt: (attemptId) => api.get(`/api/cert-tests/attempts/${attemptId}`),
+  
+  // Certificate Management
+  sendBulkCertificates: (attemptIds) => 
+    api.post('/api/admin/cert-tests/certificates/send-bulk', { attempt_ids: attemptIds }),
+  getCertificateStats: () => 
+    api.get('/api/admin/cert-tests/certificates/stats'),
 };
 
 export default api

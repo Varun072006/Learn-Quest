@@ -10,11 +10,19 @@ import { toast } from 'sonner';
 
 export const TestResults = ({ topic, difficulty, userName, testData, onReturnHome }) => {
   const certificateRef = useRef(null);
+  const [reviewRequested, setReviewRequested] = useState(false);
+  const [requestingReview, setRequestingReview] = useState(false);
   
   const testScore = testData.test_score || 0;
   const behaviorScore = testData.behavior_score || 100;
   const finalScore = testData.final_score || 0;
-  const isPassed = finalScore >= 85;
+  const passPercentage = testData.pass_percentage || testData.settings?.pass_percentage || 70;
+  const isPassed = finalScore >= passPercentage;
+  
+  // Check if eligible for review (within 10% of pass threshold)
+  const reviewThreshold = passPercentage * 0.9; // 90% of pass threshold
+  const isEligibleForReview = !isPassed && finalScore >= reviewThreshold && finalScore < passPercentage;
+  const pointsNeeded = passPercentage - finalScore;
 
   const downloadCertificate = async () => {
     if (certificateRef.current) {
@@ -32,6 +40,36 @@ export const TestResults = ({ topic, difficulty, userName, testData, onReturnHom
       } catch (error) {
         toast.error('Failed to download certificate');
       }
+    }
+  };
+
+  const requestReview = async () => {
+    setRequestingReview(true);
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_BASE_URL}/api/cert-tests/attempts/${testData.attempt_id}/request-review`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          reason: `Score ${finalScore}% is within review threshold (pass: ${passPercentage}%)`,
+          student_comment: 'Requesting manual review for score adjustment consideration'
+        })
+      });
+      
+      if (response.ok) {
+        setReviewRequested(true);
+        toast.success('Review request submitted successfully! An admin will review your test.');
+      } else {
+        toast.error('Failed to request review. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error requesting review:', error);
+      toast.error('Failed to request review. Please try again.');
+    } finally {
+      setRequestingReview(false);
     }
   };
 
@@ -90,11 +128,14 @@ export const TestResults = ({ topic, difficulty, userName, testData, onReturnHom
                 <div className="mb-2 text-sm font-semibold text-muted-foreground">
                   Final Score
                 </div>
-                <div className="mb-6">
+                <div className="mb-2">
                   <span className="font-display text-6xl font-bold text-primary">
                     {finalScore}
                   </span>
                   <span className="text-3xl text-muted-foreground">%</span>
+                </div>
+                <div className="mb-4 text-sm text-muted-foreground">
+                  Required to pass: <span className="font-semibold">{passPercentage}%</span>
                 </div>
                 <Badge
                   variant={isPassed ? 'success' : 'warning'}
@@ -102,6 +143,39 @@ export const TestResults = ({ topic, difficulty, userName, testData, onReturnHom
                 >
                   {isPassed ? 'PASSED' : 'NOT PASSED'}
                 </Badge>
+                
+                {/* Review Eligibility Notice */}
+                {isEligibleForReview && (
+                  <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                      <div className="flex-1 text-left">
+                        <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                          Eligible for Manual Review
+                        </p>
+                        <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
+                          You scored {finalScore}%, just {pointsNeeded.toFixed(1)}% below the pass threshold. 
+                          Your test can be reviewed by an administrator for potential score adjustment.
+                        </p>
+                        {!reviewRequested && !testData.review_requested && (
+                          <Button
+                            onClick={requestReview}
+                            disabled={requestingReview}
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            {requestingReview ? 'Requesting...' : 'Request Manual Review'}
+                          </Button>
+                        )}
+                        {(reviewRequested || testData.review_requested) && (
+                          <Badge variant="outline" className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-300">
+                            ✓ Review Requested - Admin will review your test
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -84,7 +84,10 @@ const ResultsAnalytics = () => {
 
   const stats = {
     averageScore: results.length > 0 ? (results.reduce((sum, r) => sum + r.score, 0) / results.length).toFixed(1) : 0,
-    passRate: results.length > 0 ? ((results.filter(r => r.score >= 85).length / results.length) * 100).toFixed(0) : 0,
+    passRate: results.length > 0 ? ((results.filter(r => {
+      const passPercentage = r.settings?.pass_percentage || 70
+      return r.score >= passPercentage
+    }).length / results.length) * 100).toFixed(0) : 0,
     totalExams: results.length,
     flaggedIncidents: results.filter(r => r.proctoring_events_count > 5).length
   }
@@ -103,7 +106,9 @@ const ResultsAnalytics = () => {
     }
     dailyData[date].total++
     dailyData[date].sum += r.score
-    if (r.score >= 85) dailyData[date].passed++
+    // Check if passed using dynamic pass percentage
+    const passPercentage = r.settings?.pass_percentage || 70
+    if (r.score >= passPercentage) dailyData[date].passed++
   })
 
   const sortedDates = Object.keys(dailyData).slice(-14) // Last 14 days
@@ -400,13 +405,18 @@ const ResultsAnalytics = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
                     <span className="capitalize">{result.difficulty}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-white font-semibold">{result.score}%</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-white font-semibold">
+                    {result.score}%
+                    <span className="text-xs text-slate-400 ml-1">
+                      / {result.settings?.pass_percentage || 70}%
+                    </span>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs font-semibold rounded-full flex items-center gap-1 w-fit ${
-                      result.score >= 85 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                      result.score >= (result.settings?.pass_percentage || 70) ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
                     }`}>
-                      {result.score >= 85 ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                      {result.score >= 85 ? 'Passed' : 'Failed'}
+                      {result.score >= (result.settings?.pass_percentage || 70) ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                      {result.score >= (result.settings?.pass_percentage || 70) ? 'Passed' : 'Failed'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">

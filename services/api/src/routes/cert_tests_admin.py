@@ -3,6 +3,7 @@ from fastapi import status
 from typing import List
 from datetime import datetime
 import json
+from bson import ObjectId
 
 # Reuse existing auth and db helpers (relative imports from routes/)
 from ..auth import require_admin_user  # type: ignore
@@ -217,4 +218,291 @@ async def delete_spec_fallback(cert_id: str, difficulty: str, admin_user=Depends
     if res.deleted_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Spec not found")
     return {"message": "Spec deleted"}
+
+
+# ============================================================================
+# CERTIFICATE MANAGEMENT ENDPOINTS
+# ============================================================================
+
+@router.post("/certificates/send-bulk")
+async def send_bulk_certificates(
+    payload: dict,
+    admin_user=Depends(require_admin_user)
+):
+    """
+    Send certificates to multiple users via email
+    
+    Request body:
+    {
+        "attempt_ids": ["attempt_1", "attempt_2"],
+        "template_id": "optional_template_id"
+    }
+    
+    Returns:
+    {
+        "total": 2,
+        "success": 2,
+        "failed": 0,
+        "details": [...]
+    }
+    """
+    from ..email_utils import send_certificate_email
+    
+    attempt_ids = payload.get("attempt_ids", [])
+    
+    import sys
+    print(f"\n{'='*80}", flush=True)
+    print(f"[BULK CERTIFICATE] Starting bulk certificate send for {len(attempt_ids)} attempts", flush=True)
+    print(f"[BULK CERTIFICATE] Attempt IDs: {attempt_ids}", flush=True)
+    print(f"{'='*80}\n", flush=True)
+    sys.stdout.flush()
+    
+    if not attempt_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No attempt IDs provided"
+        )
+    
+    results = {
+        "total": len(attempt_ids),
+        "success": 0,
+        "failed": 0,
+        "details": []
+    }
+    
+    col = get_collection("cert_attempts")
+    
+    for attempt_id in attempt_ids:
+        try:
+            print(f"\n[Certificate] === Processing attempt: {attempt_id} ===", flush=True)
+            
+            # Get attempt data - attempt_id is actually MongoDB's _id
+            try:
+                attempt = col.find_one({"_id": ObjectId(attempt_id)})
+            except:
+                # Fallback: try as string field
+                attempt = col.find_one({"attempt_id": attempt_id})
+            
+            print(f"[Certificate] Attempt found: {attempt is not None}", flush=True)
+            
+            if not attempt:
+                results["failed"] += 1
+                results["details"].append({
+                    "attempt_id": attempt_id,
+                    "status": "failed",
+                    "error": "Attempt not found"
+                })
+                continue
+            
+            # Check if user passed
+            score = attempt.get("score", 0)
+            pass_percentage = attempt.get("settings", {}).get("pass_percentage", 70)
+            user_name = attempt.get("user_name", "Student")
+            
+            if score < pass_percentage:
+                results["failed"] += 1
+                results["details"].append({
+                    "attempt_id": attempt_id,
+                    "user_name": user_name,
+                    "status": "failed",
+                    "error": f"Score too low ({score}% < {pass_percentage}%)"
+                })
+                continue
+            
+            # Get user email from users collection using user_id
+            user_id = attempt.get("user_id")
+            user_name = attempt.get("user_name", "Student")
+            user_email = None
+            
+            print(f"\n[Certificate] Processing attempt {attempt_id} for user {user_name} (ID: {user_id})")
+            
+            if user_id:
+                users_col = get_collection("users")
+                try:
+                    user_doc = users_col.find_one({"_id": ObjectId(user_id)})
+                    if user_doc:
+                        user_email = user_doc.get("email", "")
+                        print(f"[Certificate] Found email in users collection: {user_email}")
+                    else:
+                        print(f"[Certificate] User document not found for ID: {user_id}")
+                except Exception as e:
+                    print(f"[Certificate] Error fetching user email for user_id {user_id}: {e}")
+            
+            # Fallback to attempt.user_email if available
+            if not user_email:
+                user_email = attempt.get("user_email", "")
+                if user_email:
+                    print(f"[Certificate] Using email from attempt: {user_email}")
+            
+            if not user_email:
+                results["failed"] += 1
+                results["details"].append({
+                    "attempt_id": attempt_id,
+                    "user_name": user_name,
+                    "status": "failed",
+                    "error": "No email address"
+                })
+                continue
+            
+            # Prepare certificate data
+            user_name = attempt.get("user_name", "Student")
+            cert_name = attempt.get("cert_id", "Certification")
+            difficulty = attempt.get("difficulty", "medium").upper()
+            
+            # Format date
+            finished_at = attempt.get("finished_at")
+            if finished_at:
+                cert_date = finished_at.strftime("%B %d, %Y")
+            else:
+                cert_date = datetime.utcnow().strftime("%B %d, %Y")
+            
+            # Generate certificate ID
+            cert_id = f"LQ-{cert_name[:3].upper()}-2025-{attempt_id[:6]}"
+            
+            # Generate certificate PDF
+            print(f"\n[Certificate] Attempting to send certificate to {user_email} ({user_name})")
+            print(f"[Certificate] Details - Cert: {cert_name}, Score: {score}%, Pass: {pass_percentage}%")
+            
+            from ..certificate_generator import generate_certificate_pdf
+            certificate_path = generate_certificate_pdf(
+                user_name=user_name,
+                cert_name=cert_name,
+                difficulty=difficulty,
+                score=score,
+                pass_percentage=pass_percentage,
+                date=cert_date,
+                cert_id=cert_id
+            )
+            
+            if certificate_path:
+                print(f"[Certificate] PDF generated: {certificate_path}")
+            else:
+                print(f"[Certificate] PDF generation skipped or failed")
+            
+            # Send email with PDF attachment
+            email_sent = send_certificate_email(
+                to_email=user_email,
+                user_name=user_name,
+                cert_name=cert_name,
+                difficulty=difficulty,
+                score=score,
+                pass_percentage=pass_percentage,
+                date=cert_date,
+                cert_id=cert_id,
+                certificate_path=certificate_path
+            )
+            
+            print(f"[Certificate] Email sent result: {email_sent}")
+            
+            if email_sent:
+                results["success"] += 1
+                results["details"].append({
+                    "attempt_id": attempt_id,
+                    "user_email": user_email,
+                    "user_name": user_name,
+                    "status": "sent"
+                })
+                
+                # Mark certificate as sent in database
+                col.update_one(
+                    {"attempt_id": attempt_id},
+                    {
+                        "$set": {
+                            "certificate_sent": True,
+                            "certificate_sent_at": datetime.utcnow(),
+                            "certificate_sent_by": str(admin_user.id)
+                        }
+                    }
+                )
+            else:
+                results["failed"] += 1
+                results["details"].append({
+                    "attempt_id": attempt_id,
+                    "user_email": user_email,
+                    "status": "failed",
+                    "error": "Email sending failed"
+                })
+                
+        except Exception as e:
+            print(f"[Certificate] EXCEPTION occurred for attempt {attempt_id}: {str(e)}", flush=True)
+            import traceback
+            traceback.print_exc()
+            
+            # Try to get user_name from attempt if available
+            user_name_for_error = "Unknown"
+            try:
+                attempt_for_error = col.find_one({"attempt_id": attempt_id})
+                if attempt_for_error:
+                    user_name_for_error = attempt_for_error.get("user_name", "Unknown")
+            except:
+                pass
+            
+            results["failed"] += 1
+            results["details"].append({
+                "attempt_id": attempt_id,
+                "user_name": user_name_for_error,
+                "status": "failed",
+                "error": str(e)
+            })
+    
+    print(f"\n{'='*80}")
+    print(f"[BULK CERTIFICATE] Completed - Success: {results['success']}, Failed: {results['failed']}")
+    print(f"{'='*80}\n")
+    
+    return results
+
+
+@router.get("/certificates/stats")
+async def get_certificate_stats(admin_user=Depends(require_admin_user)):
+    """
+    Get certificate statistics
+    
+    Returns total certificates sent, this month, this week
+    """
+    col = get_collection("cert_attempts")
+    
+    # Total passed users
+    total_passed = col.count_documents({
+        "status": "completed",
+        "score": {"$exists": True}
+    })
+    
+    # Calculate dynamically passed users
+    all_attempts = list(col.find({
+        "status": "completed",
+        "score": {"$exists": True}
+    }))
+    
+    passed_users = [
+        a for a in all_attempts
+        if a.get("score", 0) >= a.get("settings", {}).get("pass_percentage", 70)
+    ]
+    
+    # This month
+    from datetime import datetime, timedelta
+    now = datetime.utcnow()
+    month_start = datetime(now.year, now.month, 1)
+    
+    this_month = len([
+        a for a in passed_users
+        if a.get("finished_at") and a.get("finished_at") >= month_start
+    ])
+    
+    # This week
+    week_ago = now - timedelta(days=7)
+    this_week = len([
+        a for a in passed_users
+        if a.get("finished_at") and a.get("finished_at") >= week_ago
+    ])
+    
+    # Certificates sent
+    certificates_sent = col.count_documents({"certificate_sent": True})
+    
+    return {
+        "total_passed": len(passed_users),
+        "this_month": this_month,
+        "this_week": this_week,
+        "certificates_sent": certificates_sent,
+        "pending": len(passed_users) - certificates_sent
+    }
 
