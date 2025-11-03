@@ -359,27 +359,31 @@ async def send_bulk_certificates(
             # Generate certificate ID
             cert_id = f"LQ-{cert_name[:3].upper()}-2025-{attempt_id[:6]}"
             
-            # Generate certificate PDF
+            # Generate certificate PDF (optional - requires WeasyPrint)
             print(f"\n[Certificate] Attempting to send certificate to {user_email} ({user_name})")
             print(f"[Certificate] Details - Cert: {cert_name}, Score: {score}%, Pass: {pass_percentage}%")
             
-            from ..certificate_generator import generate_certificate_pdf
-            certificate_path = generate_certificate_pdf(
-                user_name=user_name,
-                cert_name=cert_name,
-                difficulty=difficulty,
-                score=score,
-                pass_percentage=pass_percentage,
-                date=cert_date,
-                cert_id=cert_id
-            )
+            certificate_path = None
+            try:
+                from ..certificate_generator import generate_certificate_pdf
+                certificate_path = generate_certificate_pdf(
+                    user_name=user_name,
+                    cert_name=cert_name,
+                    difficulty=difficulty,
+                    score=score,
+                    pass_percentage=pass_percentage,
+                    date=cert_date,
+                    cert_id=cert_id
+                )
+                
+                if certificate_path:
+                    print(f"[Certificate] PDF generated: {certificate_path}")
+                else:
+                    print(f"[Certificate] PDF generation skipped")
+            except Exception as e:
+                print(f"[Certificate] PDF generation not available: {e}")
             
-            if certificate_path:
-                print(f"[Certificate] PDF generated: {certificate_path}")
-            else:
-                print(f"[Certificate] PDF generation skipped or failed")
-            
-            # Send email with PDF attachment
+            # Send email (with or without PDF attachment)
             email_sent = send_certificate_email(
                 to_email=user_email,
                 user_name=user_name,
