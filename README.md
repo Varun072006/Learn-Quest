@@ -66,13 +66,13 @@ Live webcam feed with auto-captured violation clips covers mobile phone usage, m
 
 Detect pocket phones, mirrored displays, or extra devices joining the session. Alerts pipe into the violation timeline.
 
-![Mobile Detection Screenshot](img/violationalert.png)
+![Malpractice Detection Screenshot](img/violationalert.png)
 
 ### Face Pose & Multi-Face Detection
 
 Real-time pose tracking and face counting ensure the learner stays centered and alone during the attempt.
 
-![Face Pose Screenshot](img/violation-timestamps.png)
+![Face Pose Screenshot](img/test-code.png)
 
 ### Quiz, LLM, and Duolingo-Style Journeys
 
@@ -84,7 +84,7 @@ Mix quick quizzes, step-by-step LLM tutoring, and streak-friendly journeys inspi
 
 LLM copilot explains answers, rewrites prompts, and provides alternative approaches while respecting guardrails defined per module/exam.
 
-![LLM Copilot Screenshot](img/test-code.png)
+![LLM Copilot Screenshot](img/quetie.png)
 
 ## Platform Flow (diagram placeholder)
 
@@ -105,7 +105,7 @@ This Docker Compose configuration provisions the full-stack architecture for the
 - **LLM/Tutoring**: Llama 3 (used by the api service) powers the AI Questie and Tutor functions.
 - **Proctoring/Monitoring**: YOLO (object detection) and MediaPipe (pose/face tracking) are employed for real-time violation detection.
 
-![AI Models Diagram](img/questie-TR.png)
+![AI Models Diagram](img/Exam-monitoring-process.png)
 
 ### ⚙️ Technical Architecture
 
@@ -119,7 +119,7 @@ The platform operates as a distributed system utilizing 10 distinct containerize
 | **AI/Vector Search** | `chroma`, `chroma-init` | Stores and retrieves vector embeddings for AI tutoring (Questie) and content similarity. | ChromaDB, Python (for initialization) |
 | **Data Storage** | `db` | Primary data persistence for user profiles, courses, and platform data. | MongoDB 7.0 |
 
-![Service Architecture](img/admin-action.png)
+![Service Architecture](img/Exam-monitoring-process.png)
 
 ### 🚀 Key Architectural Features
 
