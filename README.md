@@ -1,145 +1,276 @@
 # LearnQuest
 
-A comprehensive learning management system with AI-powered features, code execution sandbox, and gamification.
+LearnQuest is an end-to-end learning and testing platform that blends AI tutoring, adaptive practice, certification delivery, and secure proctoring. It supports both learners and administrators with tooling to create content, monitor progress, and enforce academic integrity across web and mobile devices.
 
-## 🏗️ Project Structure
+## What Makes LearnQuest Different
+
+- **AI-first learning** – AI Questie, AI Tutor, quiz copilots, and LLM-powered explanations guide learners through every topic.
+- **Adaptive practice** – Personalized practice zones, duolingo-style streaks, and XP-based leveling keep students engaged.
+- **Enterprise-grade proctoring** – Webcam monitoring, mobile/secondary-device detection, multi-face alerts, and face-pose tracking reduce violations.
+- **Unified admin workspace** – Course/catalog management, certification workflows, analytics dashboards, and content moderation live in one console.
+- **Full-stack tooling** – Monorepo contains frontend apps, backend services, infra, scripts, and documentation required to deploy on-prem or to the cloud.
+
+## Feature Tour
+
+Each feature below includes a screenshot placeholder that you can replace with the actual asset (recommended location: `docs/screenshots/`). Feel free to update the filenames once your captures are ready.
+
+### AI Questie & Tutor
+
+Generate practice questions, hints, and tutoring sessions using in-house LLM workflows. Learners can summon AI help mid-quiz, inside flashcards, or while coding.
+
+![AI Questie Screenshot](docs/screenshots/ai-questie.png)
+
+### Courses & Learning Paths
+
+Author multi-module courses with text, video, coding labs, and assessments. Duolingo-style progress indicators and streak reminders keep motivation high.
+
+![Courses Screenshot](docs/screenshots/courses.png)
+
+### Practice Zone & Learn Programming
+
+Blend MCQ, programming, and free-form practice modes with AI review of answers. Adaptive feedback highlights weak areas and suggests next lessons.
+
+![Practice Zone Screenshot](docs/screenshots/practice-zone.png)
+
+### Certifications & Exams
+
+Publish certification tracks, automate email/PDF issuance, and run secure proctored exams backed by AI monitoring.
+
+![Certifications Screenshot](docs/screenshots/certifications.png)
+
+### Admin Content Management
+
+Manage course catalogs, question banks, templates, schedules, and moderation pipelines from a unified admin portal.
+
+![Content Management Screenshot](docs/screenshots/admin-content.png)
+
+### Analytics, Comparisons, and Data Insights
+
+Display trend charts, compare students side-by-side, analyze violation metrics, and export insights for managers.
+
+![Analytics Screenshot](docs/screenshots/analytics.png)
+
+### Leaderboard, XP, and Gamification
+
+Global and cohort leaderboards, XP leveling, badge cabinet, and trophy wall drive engagement across every track.
+
+![Leaderboard Screenshot](docs/screenshots/leaderboard.png)
+
+### Webcam Monitoring & Violation Detection
+
+Live webcam feed with auto-captured violation clips covers mobile phone usage, multiple faces, face-pose drift, and other suspicious activity.
+
+![Webcam Monitoring Screenshot](docs/screenshots/proctoring-webcam.png)
+
+### Mobile & Multi-Device Detection
+
+Detect pocket phones, mirrored displays, or extra devices joining the session. Alerts pipe into the violation timeline.
+
+![Mobile Detection Screenshot](docs/screenshots/mobile-detection.png)
+
+### Face Pose & Multi-Face Detection
+
+Real-time pose tracking and face counting ensure the learner stays centered and alone during the attempt.
+
+![Face Pose Screenshot](docs/screenshots/face-pose.png)
+
+### Quiz, LLM, and Duolingo-Style Journeys
+
+Mix quick quizzes, step-by-step LLM tutoring, and streak-friendly journeys inspired by Duolingo for language or skill mastery.
+
+![Quiz Journey Screenshot](docs/screenshots/quiz-journey.png)
+
+### Practice LLM Copilot
+
+LLM copilot explains answers, rewrites prompts, and provides alternative approaches while respecting guardrails defined per module/exam.
+
+![LLM Copilot Screenshot](docs/screenshots/llm-copilot.png)
+
+## Platform Flow (diagram placeholder)
+
+Insert a high-level system/experience flow diagram here when ready.
+
+![Platform Flow Diagram](docs/screenshots/platform-flow.png)
+
+## 🎯 Technical Architecture Overview
+
+### System Summary
+
+This Docker Compose configuration provisions the full-stack architecture for the LearnQuest platform. It establishes a resilient, multi-service environment combining frontends, a Python-based API, specialized microservices for code execution (Judge0), AI vector search (ChromaDB), and an integrated MongoDB database.
+
+![Architecture Diagram](docs/screenshots/architecture-diagram.png)
+
+### Key AI Models
+
+- **LLM/Tutoring**: Llama 3 (used by the api service) powers the AI Questie and Tutor functions.
+- **Proctoring/Monitoring**: YOLO (object detection) and MediaPipe (pose/face tracking) are employed for real-time violation detection.
+
+![AI Models Diagram](docs/screenshots/ai-models.png)
+
+### ⚙️ Technical Architecture
+
+The platform operates as a distributed system utilizing 10 distinct containerized services.
+
+| Service Group | Components | Purpose | Technology |
+|--------------|------------|---------|------------|
+| **User Interface** | `web`, `admin-frontend` | Hosts the student and administrative React interfaces. | React, Node:20-alpine |
+| **Core Logic** | `api` | Handles business logic, Llama 3 orchestration, and YOLO/MediaPipe services. | Python, FastAPI/Uvicorn (via custom build) |
+| **Code Execution** | `judge0`, `judge0-worker`, `judge0-db`, `judge0-redis` | Provides a secure, dedicated environment for compiling and running code challenges. | Judge0, PostgreSQL, Redis |
+| **AI/Vector Search** | `chroma`, `chroma-init` | Stores and retrieves vector embeddings for AI tutoring (Questie) and content similarity. | ChromaDB, Python (for initialization) |
+| **Data Storage** | `db` | Primary data persistence for user profiles, courses, and platform data. | MongoDB 7.0 |
+
+![Service Architecture](docs/screenshots/service-architecture.png)
+
+### 🚀 Key Architectural Features
+
+1. **High-Performance AI Capabilities**
+   - The api service includes a deploy section that enables NVIDIA GPU reservation for performance-intensive tasks, essential for running the YOLO/MediaPipe real-time proctoring and fast Llama 3 inference.
+
+2. **Isolated Code Execution**
+   - The platform uses the Judge0 microservice stack to isolate code compilation and execution from the main API, enhancing security and preventing resource contention.
+
+3. **Service Networking & Configuration**
+   - External LLM Integration: The api service is configured to connect to an external LLM service (like Ollama for Llama 3) using `http://host.docker.internal:11434`.
+
+![Architecture Features](docs/screenshots/architecture-features.png)
+
+## Repository Layout
 
 ```
 learn-quest/
-├─ apps/              # Frontend applications
-├─ services/          # Backend services
-├─ infra/            # Infrastructure configuration
-├─ scripts/          # Utility scripts
-└─ docs/             # Documentation
+├─ apps/          # React frontends (web, admin, runners)
+├─ services/      # API, workers, embeddings, proctoring services
+├─ infra/         # Deployment and infrastructure configuration
+├─ scripts/       # Local automation & helper scripts
+├─ docs/          # Feature and troubleshooting guides
+└─ *.md           # Top-level reference manuals per subsystem
 ```
 
-## 🚀 Quick Start
+Key helper scripts:
+- `START_LEARNQUEST.bat`, `run_admin.ps1`: one-click launchers for Windows.
+- `scripts/team_setup.py`: guided environment setup for new contributors.
+- `setup_proctoring.py`, `test_proctoring.py`: camera/proctoring diagnostics.
 
-### Prerequisites
+## Prerequisites
 
-- Node.js (v18+)
-- Docker & Docker Compose
-- Python (v3.9+) for backend services
-- Google Cloud Console account (for OAuth)
+- Node.js 18+
+- Python 3.9+ (for backend services)
+- Docker Desktop with Docker Compose
+- NVIDIA Docker Runtime (required for GPU-accelerated AI features)
+- MongoDB (local or managed) for the API
+- Google Cloud Project for OAuth credentials (optional but recommended)
 
-### 👥 For Team Members
+## Environment Setup
 
-**Quick Setup:**
-```bash
-# 1. Clone the repository
+```powershell
 git clone <repo-url>
 cd LearnQuest
 
-# 2. Run the automated setup script
-python scripts/team_setup.py
-
-# 3. Optional: Set up Google OAuth (see docs/TEAM_SETUP_GUIDE.md)
-# Edit services/api/.env file with your Google OAuth credentials
-
-# 4. Access the application at http://localhost:3000
-```
-
-**📖 Full Setup Guide:** [TEAM_SETUP_GUIDE.md](TEAM_SETUP_GUIDE.md)
-
-**🔧 Manual Setup:** If the script doesn't work, follow the manual steps in the team setup guide.
-
-### Installation
-
-```bash
-# Install dependencies
+# Install JS dependencies
 npm install
 
-# Configure environment variables
-cp env.example .env
-# Edit .env with your configuration (see Google OAuth setup below)
+# Copy env template and edit values (OAuth, DB, etc.)
+copy env.example .env
 
-# Start all services with Docker
-docker-compose up
+# (Optional) Guided setup for teammates
+python scripts/team_setup.py
 ```
 
-### Google OAuth Setup
+Google OAuth instructions live in `docs/GOOGLE_OAUTH_SETUP.md`. Additional subsystem guides exist in the root (`TEAM_SETUP_GUIDE.md`, `PROCTORING_IMPLEMENTATION_GUIDE.md`, `CERTIFICATE_TEMPLATE_GUIDE.md`, etc.).
 
-1. Follow the [Google OAuth Setup Guide](docs/GOOGLE_OAUTH_SETUP.md)
-2. Configure your `.env` file with Google OAuth credentials
-3. Test the integration: `python scripts/test_google_oauth_simple.py`
+## Running the Stack
 
-## 📦 Components
+### 🛠️ Quick Deployment Guide (Docker - Recommended)
 
-### Frontend Apps
-- **web-frontend**: Main user-facing React application (Vite + Tailwind)
-- **admin-frontend**: Administrative dashboard
-- **runner**: Code execution sandbox interface
+This configuration assumes the presence of a file named `./services/api/.env` containing sensitive variables like `MONGO_URL` and `JWT_SECRET_KEY`.
 
-### Backend Services
-- **api**: Main API service (FastAPI/Express)
-- **worker**: Background job processor
-- **embeddings-index**: Vector store synchronization
+#### Prerequisites
 
-## 🛠️ Development
+- **Docker Desktop** (Required for all services)
+- **NVIDIA Docker Runtime** (Required if utilizing the api GPU deployment settings)
+
+#### Setup and Start
 
 ```bash
-# Start development environment
-npm run dev
+# 1. Ensure your .env file is configured
+# Edit ./services/api/.env with your MONGO_URL, JWT_SECRET_KEY, etc.
 
-# Run tests
-npm test
+# 2. Build and launch all services
+docker compose up -d --build
 
-# Build for production
-npm run build
+# 3. Wait for database initialization
+
+# 4. Access the Frontends:
+#    Student Web UI:    http://localhost:3000
+#    Admin Frontend:    http://localhost:5174
 ```
 
-## � Run with Docker (recommended)
+![Deployment Flow](docs/screenshots/deployment-flow.png)
 
-- Prereqs: Docker Desktop running
-- From repo root:
-	- Build: `docker-compose build`
-	- Start: `docker-compose up -d`
-- Open:
-	- Web: http://localhost:3000
-	- API health: http://localhost:8000/api/health
-- Stop and clean: `docker-compose down -v`
+#### Stopping and Cleanup
 
-Notes:
-- Web builds with Nginx and uses `VITE_API_URL=http://api:8000` inside the compose network (already set). From your browser, you’ll hit it via the web container proxy at http://localhost:3000.
+```bash
+# Stop all containers and remove their networks and volumes
+docker compose down -v
+```
 
-## 🧪 Run locally (no Docker)
+The web container proxies API traffic internally via `VITE_API_URL=http://api:8000`.
 
-### API
+### Local (no Docker)
+
+**API**
 ```powershell
 cd services/api
 python -m venv venv
-./venv/Scripts/Activate.ps1
+.\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-# Ensure Mongo is running locally on mongodb://localhost:27017 (or set MONGO_URL/MONGO_DB)
 uvicorn src.main:app --reload --port 8000
 ```
 
-### Web
+**Web Frontend**
 ```powershell
 cd apps/web-frontend
 npm install
-$env:VITE_API_URL='http://localhost:8000'
+$env:VITE_API_URL = 'http://localhost:8000'
 npm run dev
-# Open the URL Vite prints (typically http://localhost:5173)
+# open http://localhost:5173
 ```
 
-## 🔍 Smoke test
+## Testing & Tooling
 
-- API: `curl http://localhost:8000/api/health` → {"status":"ok"}
-- Web routes: `/login`, `/courses`, `/dashboard` open without errors.
+- JS tests: `npm test`
+- Frontend dev server: `npm run dev`
+- Production build: `npm run build`
+- API smoke check: `curl http://localhost:8000/api/health`
+- Camera/proctor diagnostics: `test_proctoring.py`, `test_camera.html`
 
-## �📚 Documentation
+## Documentation Index
 
-See the `/docs` folder for detailed documentation:
-- [Design System](./docs/design-system.md)
-- [API Specification](./docs/api-spec.md)
-- [Deployment Guide](./docs/deployment.md)
+All detailed manuals now live in `docs/`. Start with:
 
-## 🤝 Contributing
+- `docs/design-system.md` – shared UI components & guidelines.
+- `docs/api-spec.md` – public and internal API contracts.
+- `docs/deployment.md` – infra requirements, Docker/CI tips.
+- `docs/GOOGLE_OAUTH_SETUP.md` – identity integration steps.
+- `docs/TEAM_SETUP_GUIDE.md` – onboarding checklist for new contributors.
+- `docs/GPU_SETUP_WINDOWS.md` & `docs/CERTIFICATION_PROCTORING.md` – optional feature enablement guides.
 
-Contributions are welcome! Please read our contributing guidelines before submitting PRs.
+Keep screenshots and feature walk-throughs alongside their respective documents for easier maintenance.
 
-## 📄 License
+## Contributing
 
-MIT License - see LICENSE file for details
-# Learn-Quest
+1. Fork and clone the repo.
+2. Create a feature branch (`git checkout -b feature/my-change`).
+3. Run linting/tests before opening a PR.
+4. Provide context and screenshots/logs in pull requests for faster reviews.
+
+## ⭐ Credits
+
+**Project Lead & Core Developer:** GOKUL V  
+**Email:** gokul9942786@gmail.com
+
+## 📜 License
+
+MIT License. See `LICENSE` for full terms.
+
+

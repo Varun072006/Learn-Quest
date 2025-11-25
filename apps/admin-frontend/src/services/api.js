@@ -91,6 +91,8 @@ export const adminCertTestsAPI = {
     api.post('/api/admin/cert-tests/certificates/send-bulk', { attempt_ids: attemptIds }),
   getCertificateStats: () => 
     api.get('/api/admin/cert-tests/certificates/stats'),
+  updateCertificateStatus: (attemptId, payload) =>
+    api.patch(`/api/admin/cert-tests/certificates/${attemptId}/status`, payload),
 };
 
 export default api

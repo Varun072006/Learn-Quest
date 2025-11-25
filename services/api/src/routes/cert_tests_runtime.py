@@ -865,20 +865,27 @@ async def get_all_attempts(current_user=Depends(get_current_user)):
     for att in all_attempts:
         result.append({
             "attempt_id": str(att["_id"]),
+            "_id": str(att["_id"]),  # Add _id for consistency
             "user_id": str(att.get("user_id", "")),
             "user_name": att.get("user_name", "Unknown"),
+            "user_email": att.get("user_email", ""),  # Add email field
             "cert_id": att.get("topic_id", ""),
             "difficulty": att.get("difficulty", ""),
             "score": att.get("score", 0),
             "status": att.get("status", "in_progress"),
             "created_at": att.get("created_at").isoformat() if att.get("created_at") else None,
             "completed_at": att.get("completed_at").isoformat() if att.get("completed_at") else None,
+            "finished_at": att.get("finished_at").isoformat() if att.get("finished_at") else None,
             "completed": att.get("completed", False),
             "result": att.get("result", {}),
             "proctoring_events_count": len(att.get("proctoring_events", [])),
             "violations": att.get("violations", {}),
             "feedback": att.get("feedback", ""),
-            "eligible_for_review": att.get("score", 0) >= 80
+            "eligible_for_review": att.get("score", 0) >= 80,
+            "settings": att.get("settings", {}),  # Add settings with pass_percentage
+            "certificate_sent": att.get("certificate_sent", False),  # Add certificate status
+            "certificate_sent_at": att.get("certificate_sent_at").isoformat() if att.get("certificate_sent_at") else None,
+            "certificate_sent_by": att.get("certificate_sent_by", "")
         })
     
     return result

@@ -407,9 +407,9 @@ async def send_bulk_certificates(
                     "status": "sent"
                 })
                 
-                # Mark certificate as sent in database
+                # Mark certificate as sent in database - use _id, not attempt_id field
                 col.update_one(
-                    {"attempt_id": attempt_id},
+                    {"_id": ObjectId(attempt_id)},
                     {
                         "$set": {
                             "certificate_sent": True,
@@ -418,6 +418,7 @@ async def send_bulk_certificates(
                         }
                     }
                 )
+                print(f"[Certificate] Updated database: certificate_sent=True for {attempt_id}")
             else:
                 results["failed"] += 1
                 results["details"].append({
@@ -508,5 +509,71 @@ async def get_certificate_stats(admin_user=Depends(require_admin_user)):
         "this_week": this_week,
         "certificates_sent": certificates_sent,
         "pending": len(passed_users) - certificates_sent
+    }
+
+
+@router.patch("/certificates/{attempt_id}/status")
+async def update_certificate_status(
+    attempt_id: str,
+    payload: dict,
+    admin_user=Depends(require_admin_user)
+):
+    """
+    Update certificate status for an attempt
+    
+    Request body:
+    {
+        "certificate_sent": true/false,
+        "certificate_sent_at": "2025-11-03T10:30:00",  # optional
+        "notes": "Certificate manually marked as sent"  # optional
+    }
+    """
+    col = get_collection("cert_attempts")
+    
+    try:
+        attempt = col.find_one({"_id": ObjectId(attempt_id)})
+    except:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid attempt ID"
+        )
+    
+    if not attempt:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Attempt not found"
+        )
+    
+    update_data = {}
+    
+    if "certificate_sent" in payload:
+        update_data["certificate_sent"] = payload["certificate_sent"]
+        
+        if payload["certificate_sent"]:
+            update_data["certificate_sent_at"] = payload.get("certificate_sent_at", datetime.utcnow())
+            update_data["certificate_sent_by"] = str(admin_user.id)
+        else:
+            # Reset fields if unmarking
+            update_data["certificate_sent_at"] = None
+            update_data["certificate_sent_by"] = None
+    
+    if "notes" in payload:
+        update_data["certificate_notes"] = payload["notes"]
+    
+    if not update_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No valid update fields provided"
+        )
+    
+    col.update_one(
+        {"_id": ObjectId(attempt_id)},
+        {"$set": update_data}
+    )
+    
+    return {
+        "message": "Certificate status updated",
+        "attempt_id": attempt_id,
+        "updates": update_data
     }
 
