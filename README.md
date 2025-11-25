@@ -18,79 +18,79 @@ Each feature below includes a screenshot placeholder that you can replace with t
 
 Generate practice questions, hints, and tutoring sessions using in-house LLM workflows. Learners can summon AI help mid-quiz, inside flashcards, or while coding.
 
-![AI Questie Screenshot](docs/screenshots/ai-questie.png)
+![AI Questie Screenshot](img/quetie.png)
 
 ### Courses & Learning Paths
 
 Author multi-module courses with text, video, coding labs, and assessments. Duolingo-style progress indicators and streak reminders keep motivation high.
 
-![Courses Screenshot](docs/screenshots/courses.png)
+![Courses Screenshot](img/course.png)
 
 ### Practice Zone & Learn Programming
 
 Blend MCQ, programming, and free-form practice modes with AI review of answers. Adaptive feedback highlights weak areas and suggests next lessons.
 
-![Practice Zone Screenshot](docs/screenshots/practice-zone.png)
+![Practice Zone Screenshot](img/practice-zone-code.png)
 
 ### Certifications & Exams
 
 Publish certification tracks, automate email/PDF issuance, and run secure proctored exams backed by AI monitoring.
 
-![Certifications Screenshot](docs/screenshots/certifications.png)
+![Certifications Screenshot](img/certificate-management.png)
 
 ### Admin Content Management
 
 Manage course catalogs, question banks, templates, schedules, and moderation pipelines from a unified admin portal.
 
-![Content Management Screenshot](docs/screenshots/admin-content.png)
+![Content Management Screenshot](img/admin-dashboard.png)
 
 ### Analytics, Comparisons, and Data Insights
 
 Display trend charts, compare students side-by-side, analyze violation metrics, and export insights for managers.
 
-![Analytics Screenshot](docs/screenshots/analytics.png)
+![Analytics Screenshot](img/restul-analysis.png)
 
 ### Leaderboard, XP, and Gamification
 
 Global and cohort leaderboards, XP leveling, badge cabinet, and trophy wall drive engagement across every track.
 
-![Leaderboard Screenshot](docs/screenshots/leaderboard.png)
+![Leaderboard Screenshot](img/LB.png)
 
 ### Webcam Monitoring & Violation Detection
 
 Live webcam feed with auto-captured violation clips covers mobile phone usage, multiple faces, face-pose drift, and other suspicious activity.
 
-![Webcam Monitoring Screenshot](docs/screenshots/proctoring-webcam.png)
+![Webcam Monitoring Screenshot](img/exam-voilation-dashboard.png)
 
 ### Mobile & Multi-Device Detection
 
 Detect pocket phones, mirrored displays, or extra devices joining the session. Alerts pipe into the violation timeline.
 
-![Mobile Detection Screenshot](docs/screenshots/mobile-detection.png)
+![Mobile Detection Screenshot](img/violationalert.png)
 
 ### Face Pose & Multi-Face Detection
 
 Real-time pose tracking and face counting ensure the learner stays centered and alone during the attempt.
 
-![Face Pose Screenshot](docs/screenshots/face-pose.png)
+![Face Pose Screenshot](img/violation-timestamps.png)
 
 ### Quiz, LLM, and Duolingo-Style Journeys
 
 Mix quick quizzes, step-by-step LLM tutoring, and streak-friendly journeys inspired by Duolingo for language or skill mastery.
 
-![Quiz Journey Screenshot](docs/screenshots/quiz-journey.png)
+![Quiz Journey Screenshot](img/test-mcq.png)
 
 ### Practice LLM Copilot
 
 LLM copilot explains answers, rewrites prompts, and provides alternative approaches while respecting guardrails defined per module/exam.
 
-![LLM Copilot Screenshot](docs/screenshots/llm-copilot.png)
+![LLM Copilot Screenshot](img/test-code.png)
 
 ## Platform Flow (diagram placeholder)
 
 Insert a high-level system/experience flow diagram here when ready.
 
-![Platform Flow Diagram](docs/screenshots/platform-flow.png)
+![Platform Flow Diagram](img/dashboard.png)
 
 ## 🎯 Technical Architecture Overview
 
@@ -98,14 +98,14 @@ Insert a high-level system/experience flow diagram here when ready.
 
 This Docker Compose configuration provisions the full-stack architecture for the LearnQuest platform. It establishes a resilient, multi-service environment combining frontends, a Python-based API, specialized microservices for code execution (Judge0), AI vector search (ChromaDB), and an integrated MongoDB database.
 
-![Architecture Diagram](docs/screenshots/architecture-diagram.png)
+![Architecture Diagram](img/userprogress.png)
 
 ### Key AI Models
 
 - **LLM/Tutoring**: Llama 3 (used by the api service) powers the AI Questie and Tutor functions.
 - **Proctoring/Monitoring**: YOLO (object detection) and MediaPipe (pose/face tracking) are employed for real-time violation detection.
 
-![AI Models Diagram](docs/screenshots/ai-models.png)
+![AI Models Diagram](img/questie-TR.png)
 
 ### ⚙️ Technical Architecture
 
@@ -119,7 +119,7 @@ The platform operates as a distributed system utilizing 10 distinct containerize
 | **AI/Vector Search** | `chroma`, `chroma-init` | Stores and retrieves vector embeddings for AI tutoring (Questie) and content similarity. | ChromaDB, Python (for initialization) |
 | **Data Storage** | `db` | Primary data persistence for user profiles, courses, and platform data. | MongoDB 7.0 |
 
-![Service Architecture](docs/screenshots/service-architecture.png)
+![Service Architecture](img/admin-action.png)
 
 ### 🚀 Key Architectural Features
 
@@ -132,7 +132,7 @@ The platform operates as a distributed system utilizing 10 distinct containerize
 3. **Service Networking & Configuration**
    - External LLM Integration: The api service is configured to connect to an external LLM service (like Ollama for Llama 3) using `http://host.docker.internal:11434`.
 
-![Architecture Features](docs/screenshots/architecture-features.png)
+![Architecture Features](img/violation-card.png)
 
 ## Repository Layout
 
@@ -205,7 +205,7 @@ docker compose up -d --build
 #    Admin Frontend:    http://localhost:5174
 ```
 
-![Deployment Flow](docs/screenshots/deployment-flow.png)
+![Deployment Flow](img/test-result.png)
 
 #### Stopping and Cleanup
 
