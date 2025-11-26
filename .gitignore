@@ -165,6 +165,7 @@ test_*.html
 test_*.py
 *.bat.local
 *.ps1.local
+FIX_LOGIN.bat
 
 # Session and temporary user data
 sessions/
