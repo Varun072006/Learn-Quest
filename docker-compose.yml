@@ -1,4 +1,5 @@
 services:
+  # This is a dummy comment for commit purposes
   web:
     build:
       context: ./apps/web-frontend
