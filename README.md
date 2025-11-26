@@ -1,5 +1,7 @@
 # LearnQuest
 
+<!-- This is a dummy comment for commit purposes -->
+
 LearnQuest is an end-to-end learning and testing platform that blends AI tutoring, adaptive practice, certification delivery, and secure proctoring. It supports both learners and administrators with tooling to create content, monitor progress, and enforce academic integrity across web and mobile devices.
 
 ## What Makes LearnQuest Different
