@@ -22,7 +22,8 @@
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:build": "docker-compose build",
-    "seed": "node scripts/seed-data.js"
+    "seed": "node scripts/seed-data.js",
+    "dummy-script": ""
   },
   "devDependencies": {
     "concurrently": "^8.2.0",
