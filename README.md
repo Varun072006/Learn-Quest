@@ -1,5 +1,7 @@
 # LearnQuest
 
+### [1/ Use case documentation](docs/use-case-documentation.md) | [2/ Architecture Diagram](#-technical-architecture-overview) | [3/ Video Demo (3mins max)](https://example.com/demo)
+
 <!-- This is a dummy comment for commit purposes -->
 
 LearnQuest is an end-to-end learning and testing platform that blends AI tutoring, adaptive practice, certification delivery, and secure proctoring. It supports both learners and administrators with tooling to create content, monitor progress, and enforce academic integrity across web and mobile devices.
