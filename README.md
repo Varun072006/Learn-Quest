@@ -2,8 +2,6 @@
 
 <div align="center">
 
-# 🛠️ Project Navigation
-
 ## 1. 🚀 [Use Case Documentation](https://docs.google.com/presentation/d/1rxQbMTIswoDswAROpbyV9mRwI0Ym_Mxo/edit?usp=sharing&ouid=110734866842781979833&rtpof=true&sd=true)
 ## 2. 🏗️ [Architecture Diagram](Architecture_diagram.jpeg)
 ## 3. 🎥 [Video Demo (3mins max)](https://drive.google.com/file/d/1un3AtXptBO43Nuntelc-95Z9md-8Zywr/view?usp=sharing)
