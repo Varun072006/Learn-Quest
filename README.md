@@ -1,8 +1,13 @@
 # LearnQuest
 
-### [1/ Use case documentation](docs/use-case-documentation.md) | [2/ Architecture Diagram](#-technical-architecture-overview) | [3/ Video Demo (3mins max)](https://example.com/demo)
+<div align="center">
 
-<!-- This is a dummy comment for commit purposes -->
+| 🚀 [Use case documentation](https://docs.google.com/presentation/d/1rxQbMTIswoDswAROpbyV9mRwI0Ym_Mxo/edit?usp=sharing&ouid=110734866842781979833&rtpof=true&sd=true) | 🏗️ [Architecture Diagram](Architecture_diagram.jpeg) | 🎥 [Video Demo (3mins max)](https://drive.google.com/file/d/1un3AtXptBO43Nuntelc-95Z9md-8Zywr/view?usp=sharing) |
+| :---: | :---: | :---: |
+
+</div>
+
+---
 
 LearnQuest is an end-to-end learning and testing platform that blends AI tutoring, adaptive practice, certification delivery, and secure proctoring. It supports both learners and administrators with tooling to create content, monitor progress, and enforce academic integrity across web and mobile devices.
 
@@ -74,7 +79,7 @@ Detect pocket phones, mirrored displays, or extra devices joining the session. A
 
 ### Face Pose & Multi-Face Detection
 
-Real-time pose tracking and face counting ensure the learner stays centered and alone during the attempt.
+Real-time_pose tracking and face counting ensure the learner stays centered and alone during the attempt.
 
 ![Face Pose Screenshot](img/test-code.png)
 
